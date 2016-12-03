@@ -44,7 +44,7 @@ class Environment:
 
     # private methods
 
-
+    '''
     def __checking_neighbors(self,organisms):
         l_neighbors_position = []
         i = 0
@@ -65,6 +65,28 @@ class Environment:
         print i
         return l_neighbors_position
 
+    '''
+
+    def __checking_neighbors(self, organisms):
+        l_neighbors_position = []
+        i = 0
+        for organism in organisms:
+            for neighbor_position in organism.neighbors:
+                i +=1
+                found = False
+                list_neig = filter(lambda x:x.position == neighbor_position,organisms)
+                if len(list_neig) > 0:
+                    found = True
+                    organism.qtd_neighbors += 1
+
+
+                if found == False:
+                    if neighbor_position not in l_neighbors_position:
+                        l_neighbors_position.append(neighbor_position)
+                if organism.qtd_neighbors > 3:
+                    break
+        print i
+        return l_neighbors_position
 
     def __checking_deads(self,l,organisms):
         deads = []
@@ -235,8 +257,8 @@ class Patterns:
 
 def fill_environment(environment):
 
-    for x in range(0,30):
-        for y in range(0,30):
+    for x in range(0,100):
+        for y in range(0,75):
             environment.add_organism((x, y))
 
 
@@ -251,11 +273,11 @@ if __name__ == "__main__":
 
 
     #for g in range(20,100,5):
-    #    Patterns.glider((g,20),1,game.environment)
+        #Patterns.glider((g,20),1,game.environment)
 
     #Patterns.glider((20,20), 4, game.environment)
 
-    while game.running and game.generation < 40:
+    while game.running:
 
         game.event()
         game.update()
