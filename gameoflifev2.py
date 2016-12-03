@@ -16,13 +16,30 @@ class Environment:
     def __init__(self):
         self.organisms = []
         self.deads_position = []
+        self.state_map = [[0 for x in xrange(800)] for y in xrange(600)]
 
     def is_empty(self):
         return  not (len(self.organisms))
 
     def add_organism(self,position):
-        org = Organism(position[0],position[1],1)
-        self.organisms.append(org)
+        if (position[0] > 0) and (position[1] > 0):
+            org = Organism(position[0],position[1],1)
+            self.organisms.append(org)
+
+    def remove_organism(self,position):
+        l = self.find_organism_by_pos(position)
+        if len(l) > 0:
+            self.deads_position.append(position)
+            self.organisms.remove(l[0])
+
+            return True
+        else:
+            return False
+
+
+    def find_organism_by_pos(self,position):
+        l = filter(lambda x: x.position == position,self.organisms)
+        return l
 
     def update(self):
 
@@ -44,47 +61,26 @@ class Environment:
 
     # private methods
 
-    '''
-    def __checking_neighbors(self,organisms):
-        l_neighbors_position = []
-        i = 0
-        for organism in organisms:
-            for neighbor_position in organism.neighbors:
-                for neighbor in organisms:
-                    i += 1
-                    found = False
-                    if organism.position != neighbor.position:
-                        if neighbor_position == neighbor.position:
-                            organism.qtd_neighbors += 1
-                            found = True
-                            break
-
-                if found == False:
-                    if neighbor_position not in l_neighbors_position:
-                        l_neighbors_position.append(neighbor_position)
-        print i
-        return l_neighbors_position
-
-    '''
 
     def __checking_neighbors(self, organisms):
         l_neighbors_position = []
         i = 0
         for organism in organisms:
             for neighbor_position in organism.neighbors:
-                i +=1
-                found = False
-                list_neig = filter(lambda x:x.position == neighbor_position,organisms)
-                if len(list_neig) > 0:
-                    found = True
-                    organism.qtd_neighbors += 1
+                if (neighbor_position[0] > 0) and (neighbor_position[1] > 0):
+                    i +=1
+                    found = False
+                    list_neig = filter(lambda x:x.position == neighbor_position,organisms)
+                    if len(list_neig) > 0:
+                        found = True
+                        organism.qtd_neighbors += 1
 
 
-                if found == False:
-                    if neighbor_position not in l_neighbors_position:
-                        l_neighbors_position.append(neighbor_position)
-                if organism.qtd_neighbors > 3:
-                    break
+                    if found == False:
+                        if neighbor_position not in l_neighbors_position:
+                            l_neighbors_position.append(neighbor_position)
+                    if organism.qtd_neighbors > 3:
+                        break
         print i
         return l_neighbors_position
 
@@ -137,20 +133,22 @@ class Board:
     GREEN = (0, 255, 0)
     BLUE = (67, 18, 174)
     YELLOW = (255, 211, 0)
-    MAGNITUDE = 8
-    X0 = 6
-    Y0 = 6
+    BORDER = 2
+    MAGNITUDE = 6
+    PORTION = MAGNITUDE / 2
 
     def __init__(self,resolution):
 
         self.width,self.height = resolution
         pygame.init()
         self.windowSurface = pygame.display.set_mode(resolution, 0, 32)
-        self.windowSurface.fill(self.WHITE)
-        for x in range(resolution[0] / self.MAGNITUDE):
-            for y  in range(resolution[1] / self.MAGNITUDE):
-                self.drawCell((x,y),0)
+        self.drawBoard()
 
+    def drawBoard(self):
+        self.windowSurface.fill(self.WHITE)
+        for x in range(self.width / (self.MAGNITUDE + self.BORDER)):
+            for y  in range(self.height / (self.MAGNITUDE + self.BORDER)):
+                self.drawCell((x,y),0)
 
     def set_title(self,title):
         pygame.display.set_caption(title)
@@ -162,25 +160,30 @@ class Board:
     def drawCell(self,position,state):
 
         color = (self.BLUE,self.YELLOW)[state]
-        mag = self.MAGNITUDE
+        mag = self.MAGNITUDE + self.BORDER
 
-        xo = self.X0
-        yo = self.Y0
+        xo = self.MAGNITUDE
+        yo = self.MAGNITUDE
 
         x = (position[0] * mag) + xo
         y = (position[1] * mag) + yo
 
         if (0 < x < self.width) and (0 < y < self.height):
-            pygame.draw.polygon(self.windowSurface, color, ((x-3, y-3), (x+3, y-3), (x+3, y+3), (x-3, y+3)))
+            pygame.draw.polygon(self.windowSurface, color, ((x-self.PORTION, y-self.PORTION), (x+self.PORTION, y-self.PORTION), (x+self.PORTION, y+self.PORTION), (x-self.PORTION, y+self.PORTION)))
 
+    def zoom(self,mag):
 
+        if 2 <= (self.MAGNITUDE + mag) <= 20:
+            self.MAGNITUDE += mag
+            self.PORTION = self.MAGNITUDE / 2
+            self.drawBoard()
 
 
 class Game:
 
     WIDTH = 800
     HEIGHT = 600
-    SLEEP = "sleep 0.2"
+    SLEEP = "sleep 0.1"
 
 
     def __init__(self,name):
@@ -194,29 +197,77 @@ class Game:
 
         self.board.set_title(self.name + " Running!")
 
+        self.pattern = ""
+        self.pattern_orientation = 1
+
+
     def pause(self):
         self.paused = (True, False)[self.paused]
         self.board.set_title(self.name + (" Running!"," Paused...")[self.paused])
+
+
+    def update_cells(self):
+        for dead_position in self.environment.deads_position:
+            self.board.drawCell(dead_position, 0)
+
+        for organism in self.environment.organisms:
+            self.board.drawCell(organism.position, 1)
 
 
     def update(self):
 
         if not self.paused:
 
-            print "Generation: ",self.generation, "Lives: ", len(self.environment.organisms), " Deads: ", len(self.environment.deads_position)
-            for dead_position in self.environment.deads_position:
-                self.board.drawCell(dead_position,0)
-
-            for organism in self.environment.organisms:
-                self.board.drawCell(organism.position, 1)
-
-            self.environment.update()
-            self.generation +=1
 
 
+            if self.generation > 0:
+                self.environment.update()
+
+            self.update_cells()
             self.board.update()
 
+            print "Generation: ",self.generation, "Lives: ", len(self.environment.organisms), " Deads: ", len(self.environment.deads_position)
+            self.generation += 1
+
+
+
             #os.system(self.SLEEP)
+
+    def __get_pos(self):
+        (mouseX, mouseY) = pygame.mouse.get_pos()
+        mouseX = (mouseX - self.board.PORTION) / (self.board.MAGNITUDE + self.board.BORDER)
+        mouseY = (mouseY - self.board.PORTION) / (self.board.MAGNITUDE + self.board.BORDER)
+
+        return (mouseX,mouseY)
+
+    def __toggle_pos(self,found,pos):
+        if found:
+            self.environment.remove_organism(pos)
+
+        else:
+            self.environment.add_organism(pos)
+
+
+
+    def __check_organisms(self):
+
+        pos = self.__get_pos()
+
+        if len(self.pattern) <= 0:
+            found = len(self.environment.find_organism_by_pos(pos))
+            self.__toggle_pos(found, pos)
+        else:
+            self.__add_pattern(pos)
+
+        self.update_cells()
+        self.board.update()
+
+    def __add_pattern(self,pos):
+
+        if self.pattern == "glider":
+            Patterns.glider(pos,self.pattern_orientation,self.environment)
+        elif self.pattern == "lwss":
+            Patterns.lwss(pos,self.pattern_orientation,self.environment)
 
 
     def event(self):
@@ -224,13 +275,42 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                pass
+                self.paused = True
+                self.__check_organisms()
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     self.pause()
 
-                elif event.key == pygame.K_c:
-                    pass
+                elif event.key == pygame.K_LEFT:
+                    if len(self.pattern) > 0:
+                        self.pattern_orientation = 1
+                elif event.key == pygame.K_RIGHT:
+                    if len(self.pattern) > 0:
+                        self.pattern_orientation = 2
+
+                elif event.key == pygame.K_UP:
+                    if len(self.pattern) > 0:
+                        self.pattern_orientation = 3
+
+                elif event.key == pygame.K_DOWN:
+                    if len(self.pattern) > 0:
+                        self.pattern_orientation = 4
+
+                elif event.key == pygame.K_EQUALS:
+                    self.board.zoom(2)
+                elif event.key == pygame.K_MINUS:
+                    self.board.zoom(-2)
+
+                # patterns
+                elif event.key == pygame.K_1:
+                    self.pattern = "glider"
+                elif event.key == pygame.K_2:
+                    self.pattern = "lwss"
+                elif event.key == pygame.K_DELETE:
+                    self.pattern = ""
+                    self.pattern_position = 1
+
 
 
 
@@ -252,13 +332,38 @@ class Patterns:
             l = [(x0, y0), (x0, y0 - 2), (x0 - 1, y0 - 1), (x0 - 2, y0 - 1), (x0 - 1, y0 - 2)]
 
         for position in l:
-            environment.add_organism(position)
+            l_found = environment.find_organism_by_pos(position)
+            if len(l_found) <= 0:
+                environment.add_organism(position)
+
+    @staticmethod
+    def lwss(position,orientation,environment):
+
+        l = []
+        x0,y0 = position
+        if orientation == 1:
+            l = [(x0,y0 + 1), (x0 + 1, y0 + 2),(x0 + 1, y0 + 1), (x0 + 1, y0), (x0 + 2, y0), (x0 + 3, y0 + 1), (x0 + 4, y0 + 1)
+                , (x0 + 2, y0 + 2), (x0 + 3, y0 + 2), (x0 + 4, y0 + 2), (x0 + 3, y0 + 3), (x0 + 2, y0 + 3)]
+        elif orientation == 2:
+            l = [(x0,y0 + 1), (x0 + 1, y0 + 2),(x0 + 1, y0 + 1), (x0 + 1, y0), (x0 + 2, y0), (x0 + 3, y0 + 1), (x0 + 4, y0 + 1)
+                , (x0 + 2, y0 + 2), (x0 + 3, y0 + 2), (x0 + 4, y0 + 2), (x0 + 3, y0 + 3), (x0 + 2, y0 + 3)]
+        elif orientation == 3:
+            l = [(x0,y0 + 1), (x0 + 1, y0 + 2),(x0 + 1, y0 + 1), (x0 + 1, y0), (x0 + 2, y0), (x0 + 3, y0 + 1), (x0 + 4, y0 + 1)
+                , (x0 + 2, y0 + 2), (x0 + 3, y0 + 2), (x0 + 4, y0 + 2), (x0 + 3, y0 + 3), (x0 + 2, y0 + 3)]
+        elif orientation == 4:
+            l = [(x0,y0 + 1), (x0 + 1, y0 + 2),(x0 + 1, y0 + 1), (x0 + 1, y0), (x0 + 2, y0), (x0 + 3, y0 + 1), (x0 + 4, y0 + 1)
+                , (x0 + 2, y0 + 2), (x0 + 3, y0 + 2), (x0 + 4, y0 + 2), (x0 + 3, y0 + 3), (x0 + 2, y0 + 3)]
+
+        for position in l:
+            l_found = environment.find_organism_by_pos(position)
+            if len(l_found) <= 0:
+                environment.add_organism(position)
 
 
 def fill_environment(environment):
 
-    for x in range(0,100):
-        for y in range(0,75):
+    for x in range(0,50):
+        for y in range(0,50):
             environment.add_organism((x, y))
 
 
@@ -267,15 +372,16 @@ if __name__ == "__main__":
 
 
     game = Game("Game of Life")
-    game.update()
 
     fill_environment(game.environment)
 
 
-    #for g in range(20,100,5):
-        #Patterns.glider((g,20),1,game.environment)
+    #for g in range(20,30,5):
+        #Patterns.glider((g,20),random.randint(1,4),game.environment)
 
-    #Patterns.glider((20,20), 4, game.environment)
+    #Patterns.glider((0,0), 1, game.environment)
+
+
 
     while game.running:
 
