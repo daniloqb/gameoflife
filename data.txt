@@ -1,0 +1,143 @@
+'''
+    environment = []
+    environment.append(Organism(5,5,1))
+    environment.append(Organism(5, 6, 1))
+    environment.append(Organism(4, 4, 1))
+    environment.append(Organism(4, 6, 1))
+    environment.append(Organism(6, 4, 1))
+
+    environment = []
+    environment.append(Organism(5, 5, 1))
+    environment.append(Organism(5, 6, 1))
+    environment.append(Organism(5, 7, 1))
+    environment.append(Organism(5, 8, 1))
+    environment.append(Organism(5, 9, 1))
+
+    environment.append(Organism(6, 5, 1))
+    environment.append(Organism(6, 6, 1))
+    environment.append(Organism(6, 7, 1))
+    environment.append(Organism(6, 8, 1))
+    environment.append(Organism(6, 9, 1))
+
+    environment.append(Organism(7, 5, 1))
+    environment.append(Organism(7, 6, 1))
+    environment.append(Organism(7, 7, 1))
+    environment.append(Organism(7, 8, 1))
+    environment.append(Organism(7, 9, 1))
+
+    environment.append(Organism(8, 5, 1))
+    environment.append(Organism(8, 6, 1))
+    environment.append(Organism(8, 7, 1))
+    environment.append(Organism(8, 8, 1))
+    environment.append(Organism(8, 9, 1))
+
+    environment.append(Organism(9, 5, 1))
+    environment.append(Organism(9, 6, 1))
+    environment.append(Organism(9, 7, 1))
+    environment.append(Organism(9, 8, 1))
+    environment.append(Organism(9, 9, 1))
+
+
+
+    environment.append(Organism(10, 5, 1))
+    environment.append(Organism(10, 6, 1))
+    environment.append(Organism(10, 7, 1))
+    environment.append(Organism(10, 8, 1))
+    environment.append(Organism(10, 9, 1))
+
+    environment.append(Organism(11, 5, 1))
+    environment.append(Organism(11, 6, 1))
+    environment.append(Organism(11, 7, 1))
+    environment.append(Organism(11, 8, 1))
+    environment.append(Organism(11, 9, 1))
+
+    environment.append(Organism(12, 5, 1))
+    environment.append(Organism(12, 6, 1))
+    environment.append(Organism(12, 7, 1))
+    environment.append(Organism(12, 8, 1))
+    environment.append(Organism(12, 9, 1))
+
+    environment.append(Organism(13, 5, 1))
+    environment.append(Organism(13, 6, 1))
+    environment.append(Organism(13, 7, 1))
+    environment.append(Organism(13, 8, 1))
+    environment.append(Organism(13, 9, 1))
+
+    environment.append(Organism(14, 5, 1))
+    environment.append(Organism(14, 6, 1))
+    environment.append(Organism(14, 7, 1))
+    environment.append(Organism(14, 8, 1))
+    environment.append(Organism(14, 9, 1))
+    '''
+
+
+'''
+    environment.add_organism((5, 5))
+    environment.add_organism((5, 6))
+    environment.add_organism((4, 4))
+    environment.add_organism((4, 6))
+    environment.add_organism((6, 4))
+    '''
+
+    '''
+    environment.add_organism((5, 5))
+    environment.add_organism((5, 6))
+    environment.add_organism((5, 7))
+    environment.add_organism((5, 8))
+    environment.add_organism((5, 9))
+
+    environment.add_organism((6, 5))
+    environment.add_organism((6, 6))
+    environment.add_organism((6, 7))
+    environment.add_organism((6, 8))
+    environment.add_organism((6, 9))
+
+    environment.add_organism((7, 5))
+    environment.add_organism((7, 6))
+    environment.add_organism((7, 7))
+    environment.add_organism((7, 8))
+    environment.add_organism((7, 9))
+
+    environment.add_organism((8, 5))
+    environment.add_organism((8, 6))
+    environment.add_organism((8, 7))
+    environment.add_organism((8, 8))
+    environment.add_organism((8, 9))
+
+    environment.add_organism((9, 5))
+    environment.add_organism((9, 6))
+    environment.add_organism((9, 7))
+    environment.add_organism((9, 8))
+    environment.add_organism((9, 9))
+
+
+    environment.add_organism((10, 5))
+    environment.add_organism((10, 6))
+    environment.add_organism((10, 7))
+    environment.add_organism((10, 8))
+    environment.add_organism((10, 9))
+
+    environment.add_organism((11, 5))
+    environment.add_organism((11, 6))
+    environment.add_organism((11, 7))
+    environment.add_organism((11, 8))
+    environment.add_organism((11, 9))
+
+    environment.add_organism((12, 5))
+    environment.add_organism((12, 6))
+    environment.add_organism((12, 7))
+    environment.add_organism((12, 8))
+    environment.add_organism((12, 9))
+
+    environment.add_organism((13, 5))
+    environment.add_organism((13, 6))
+    environment.add_organism((13, 7))
+    environment.add_organism((13, 8))
+    environment.add_organism((13, 9))
+
+    environment.add_organism((14, 5))
+    environment.add_organism((14, 6))
+    environment.add_organism((14, 7))
+    environment.add_organism((14, 8))
+    environment.add_organism((14, 9))
+    '''

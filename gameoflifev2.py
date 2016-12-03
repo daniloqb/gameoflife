@@ -1,3 +1,7 @@
+#!/usr/bin/python
+
+import os
+import random
 import pygame
 
 
@@ -8,35 +12,32 @@ class Organism:
         self.qtd_neighbors = 0
         self.neighbors = [(x-1,y-1),(x,y-1),(x+1,y-1),(x-1,y),(x+1,y),(x-1,y+1),(x,y+1),(x+1,y+1)]
 
-    def __str__(self):
-        print self.position
-
-
 class Environment:
     def __init__(self):
-        self.environment = []
+        self.organisms = []
+        self.deads_position = []
 
     def is_empty(self):
-        return  not (len(self.environment))
+        return  not (len(self.organisms))
 
     def add_organism(self,position):
         org = Organism(position[0],position[1],1)
-        self.environment.append(org)
+        self.organisms.append(org)
 
     def update(self):
 
-        l_neighbors_position = self.__checking_neighbors(self.environment)
+        l_neighbors_position = self.__checking_neighbors(self.organisms)
 
-        list_of_deads = self.__checking_deads(l_neighbors_position, self.environment)
+        list_of_deads = self.__checking_deads(l_neighbors_position, self.organisms)
 
-        self.__killing_organisms(self.environment)
+        self.deads_position = self.__killing_organisms(self.organisms)
 
-        self.__checking_new_borns(list_of_deads, self.environment)
+        self.__checking_new_borns(list_of_deads, self.organisms)
 
-        self.__reinitialize_organisms(self.environment)
+        self.__reinitialize_organisms(self.organisms)
 
     def show(self):
-        for organism in self.environment:
+        for organism in self.organisms:
             print organism.position,":", organism.qtd_neighbors,
         print
 
@@ -44,11 +45,13 @@ class Environment:
     # private methods
 
 
-    def __checking_neighbors(self,environment):
+    def __checking_neighbors(self,organisms):
         l_neighbors_position = []
-        for organism in environment:
+        i = 0
+        for organism in organisms:
             for neighbor_position in organism.neighbors:
-                for neighbor in environment:
+                for neighbor in organisms:
+                    i += 1
                     found = False
                     if organism.position != neighbor.position:
                         if neighbor_position == neighbor.position:
@@ -59,203 +62,203 @@ class Environment:
                 if found == False:
                     if neighbor_position not in l_neighbors_position:
                         l_neighbors_position.append(neighbor_position)
-
+        print i
         return l_neighbors_position
 
 
-    def __checking_deads(self,l,environment):
+    def __checking_deads(self,l,organisms):
         deads = []
 
         for dead in l:
             deads.append(Organism(dead[0], dead[1], 1))
 
         for dead_organism in deads:
-            for neighbor in environment:
+            for neighbor in organisms:
                 if neighbor.position in dead_organism.neighbors:
                     dead_organism.qtd_neighbors += 1
 
         return deads
 
 
-    def __killing_organisms(self,environment):
+    def __killing_organisms(self,organisms):
         organism_to_kill = []
-        for organism in environment:
+        l_deads_position = []
+        for organism in organisms:
             if organism.qtd_neighbors < 2 or organism.qtd_neighbors > 3:
                 organism_to_kill.append(organism)
 
-        for organism in organism_to_kill:
-            environment.remove(organism)
 
-    def __checking_new_borns(self,l,environment):
+        for organism in organism_to_kill:
+            l_deads_position.append(organism.position)
+            organisms.remove(organism)
+
+        return l_deads_position
+
+    def __checking_new_borns(self,l,organisms):
         for organism in l:
             if organism.qtd_neighbors == 3:
-                environment.append(organism)
+                organisms.append(organism)
 
 
-    def __reinitialize_organisms(self,environment):
-        for organism in environment:
+    def __reinitialize_organisms(self,organisms):
+        for organism in organisms:
             organism.qtd_neighbors = 0
 
 
+
+
+class Board:
+
+    BLACK = (0, 0, 0)
+    WHITE = (255, 255, 255)
+    RED = (255, 0, 0)
+    GREEN = (0, 255, 0)
+    BLUE = (67, 18, 174)
+    YELLOW = (255, 211, 0)
+    MAGNITUDE = 8
+    X0 = 6
+    Y0 = 6
+
+    def __init__(self,resolution):
+
+        self.width,self.height = resolution
+        pygame.init()
+        self.windowSurface = pygame.display.set_mode(resolution, 0, 32)
+        self.windowSurface.fill(self.WHITE)
+        for x in range(resolution[0] / self.MAGNITUDE):
+            for y  in range(resolution[1] / self.MAGNITUDE):
+                self.drawCell((x,y),0)
+
+
+    def set_title(self,title):
+        pygame.display.set_caption(title)
+
+    def update(self):
+        pygame.display.update()
+
+
+    def drawCell(self,position,state):
+
+        color = (self.BLUE,self.YELLOW)[state]
+        mag = self.MAGNITUDE
+
+        xo = self.X0
+        yo = self.Y0
+
+        x = (position[0] * mag) + xo
+        y = (position[1] * mag) + yo
+
+        if (0 < x < self.width) and (0 < y < self.height):
+            pygame.draw.polygon(self.windowSurface, color, ((x-3, y-3), (x+3, y-3), (x+3, y+3), (x-3, y+3)))
+
+
+
+
+class Game:
+
+    WIDTH = 800
+    HEIGHT = 600
+    SLEEP = "sleep 0.2"
+
+
+    def __init__(self,name):
+        self.name = name
+        self.generation = 0
+        self.environment = Environment()
+        self.board = Board((self.WIDTH,self.HEIGHT))
+
+        self.running = True
+        self.paused = False
+
+        self.board.set_title(self.name + " Running!")
+
+    def pause(self):
+        self.paused = (True, False)[self.paused]
+        self.board.set_title(self.name + (" Running!"," Paused...")[self.paused])
+
+
+    def update(self):
+
+        if not self.paused:
+
+            print "Generation: ",self.generation, "Lives: ", len(self.environment.organisms), " Deads: ", len(self.environment.deads_position)
+            for dead_position in self.environment.deads_position:
+                self.board.drawCell(dead_position,0)
+
+            for organism in self.environment.organisms:
+                self.board.drawCell(organism.position, 1)
+
+            self.environment.update()
+            self.generation +=1
+
+
+            self.board.update()
+
+            #os.system(self.SLEEP)
+
+
+    def event(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                pass
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    self.pause()
+
+                elif event.key == pygame.K_c:
+                    pass
+
+
+
+
+class Patterns:
+
+    @staticmethod
+    def glider(position,orientation,environment):
+
+        l = []
+        x0,y0 = position
+        if orientation == 1:
+            l = [(x0,y0), (x0, y0 + 2),(x0 + 1, y0 + 1), (x0 + 2, y0 + 1), (x0 + 1, y0 + 2)]
+        elif orientation == 2:
+            l = [(x0, y0),(x0, y0 + 2),(x0 - 1, y0 + 1), (x0 - 2, y0 + 1),  (x0 - 1, y0 + 2)]
+        elif orientation == 3:
+            l = [(x0, y0), (x0, y0 - 2), (x0 + 1, y0 - 1), (x0 + 2, y0 - 1), (x0 + 1, y0 - 2)]
+        elif orientation == 4:
+            l = [(x0, y0), (x0, y0 - 2), (x0 - 1, y0 - 1), (x0 - 2, y0 - 1), (x0 - 1, y0 - 2)]
+
+        for position in l:
+            environment.add_organism(position)
+
+
+def fill_environment(environment):
+
+    for x in range(0,30):
+        for y in range(0,30):
+            environment.add_organism((x, y))
+
+
+
 if __name__ == "__main__":
-    '''
-    environment = []
-    environment.append(Organism(5,5,1))
-    environment.append(Organism(5, 6, 1))
-    environment.append(Organism(4, 4, 1))
-    environment.append(Organism(4, 6, 1))
-    environment.append(Organism(6, 4, 1))
-
-    environment = []
-    environment.append(Organism(5, 5, 1))
-    environment.append(Organism(5, 6, 1))
-    environment.append(Organism(5, 7, 1))
-    environment.append(Organism(5, 8, 1))
-    environment.append(Organism(5, 9, 1))
-
-    environment.append(Organism(6, 5, 1))
-    environment.append(Organism(6, 6, 1))
-    environment.append(Organism(6, 7, 1))
-    environment.append(Organism(6, 8, 1))
-    environment.append(Organism(6, 9, 1))
-
-    environment.append(Organism(7, 5, 1))
-    environment.append(Organism(7, 6, 1))
-    environment.append(Organism(7, 7, 1))
-    environment.append(Organism(7, 8, 1))
-    environment.append(Organism(7, 9, 1))
-
-    environment.append(Organism(8, 5, 1))
-    environment.append(Organism(8, 6, 1))
-    environment.append(Organism(8, 7, 1))
-    environment.append(Organism(8, 8, 1))
-    environment.append(Organism(8, 9, 1))
-
-    environment.append(Organism(9, 5, 1))
-    environment.append(Organism(9, 6, 1))
-    environment.append(Organism(9, 7, 1))
-    environment.append(Organism(9, 8, 1))
-    environment.append(Organism(9, 9, 1))
 
 
+    game = Game("Game of Life")
+    game.update()
 
-    environment.append(Organism(10, 5, 1))
-    environment.append(Organism(10, 6, 1))
-    environment.append(Organism(10, 7, 1))
-    environment.append(Organism(10, 8, 1))
-    environment.append(Organism(10, 9, 1))
-
-    environment.append(Organism(11, 5, 1))
-    environment.append(Organism(11, 6, 1))
-    environment.append(Organism(11, 7, 1))
-    environment.append(Organism(11, 8, 1))
-    environment.append(Organism(11, 9, 1))
-
-    environment.append(Organism(12, 5, 1))
-    environment.append(Organism(12, 6, 1))
-    environment.append(Organism(12, 7, 1))
-    environment.append(Organism(12, 8, 1))
-    environment.append(Organism(12, 9, 1))
-
-    environment.append(Organism(13, 5, 1))
-    environment.append(Organism(13, 6, 1))
-    environment.append(Organism(13, 7, 1))
-    environment.append(Organism(13, 8, 1))
-    environment.append(Organism(13, 9, 1))
-
-    environment.append(Organism(14, 5, 1))
-    environment.append(Organism(14, 6, 1))
-    environment.append(Organism(14, 7, 1))
-    environment.append(Organism(14, 8, 1))
-    environment.append(Organism(14, 9, 1))
-    '''
+    fill_environment(game.environment)
 
 
-    environment = Environment()
+    #for g in range(20,100,5):
+    #    Patterns.glider((g,20),1,game.environment)
 
-    '''
-    environment.add_organism((5, 5))
-    environment.add_organism((5, 6))
-    environment.add_organism((4, 4))
-    environment.add_organism((4, 6))
-    environment.add_organism((6, 4))
-    '''
+    #Patterns.glider((20,20), 4, game.environment)
 
-    '''
-    environment.add_organism((5, 5))
-    environment.add_organism((5, 6))
-    environment.add_organism((5, 7))
-    environment.add_organism((5, 8))
-    environment.add_organism((5, 9))
+    while game.running and game.generation < 40:
 
-    environment.add_organism((6, 5))
-    environment.add_organism((6, 6))
-    environment.add_organism((6, 7))
-    environment.add_organism((6, 8))
-    environment.add_organism((6, 9))
-
-    environment.add_organism((7, 5))
-    environment.add_organism((7, 6))
-    environment.add_organism((7, 7))
-    environment.add_organism((7, 8))
-    environment.add_organism((7, 9))
-
-    environment.add_organism((8, 5))
-    environment.add_organism((8, 6))
-    environment.add_organism((8, 7))
-    environment.add_organism((8, 8))
-    environment.add_organism((8, 9))
-
-    environment.add_organism((9, 5))
-    environment.add_organism((9, 6))
-    environment.add_organism((9, 7))
-    environment.add_organism((9, 8))
-    environment.add_organism((9, 9))
-
-
-    environment.add_organism((10, 5))
-    environment.add_organism((10, 6))
-    environment.add_organism((10, 7))
-    environment.add_organism((10, 8))
-    environment.add_organism((10, 9))
-
-    environment.add_organism((11, 5))
-    environment.add_organism((11, 6))
-    environment.add_organism((11, 7))
-    environment.add_organism((11, 8))
-    environment.add_organism((11, 9))
-
-    environment.add_organism((12, 5))
-    environment.add_organism((12, 6))
-    environment.add_organism((12, 7))
-    environment.add_organism((12, 8))
-    environment.add_organism((12, 9))
-
-    environment.add_organism((13, 5))
-    environment.add_organism((13, 6))
-    environment.add_organism((13, 7))
-    environment.add_organism((13, 8))
-    environment.add_organism((13, 9))
-
-    environment.add_organism((14, 5))
-    environment.add_organism((14, 6))
-    environment.add_organism((14, 7))
-    environment.add_organism((14, 8))
-    environment.add_organism((14, 9))
-    '''
-
-    gen = 0;
-
-
-    while not environment.is_empty():
-        print "Generation: ", gen," ",
-        environment.show()
-        environment.update()
-        gen +=1
-
-
-
-
+        game.event()
+        game.update()
 
 
 
