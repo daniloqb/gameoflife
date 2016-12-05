@@ -388,8 +388,8 @@ if __name__ == "__main__":
     #fill_environment(game.environment)
 
 
-    #for g in range(20,100,5):
-     #   Patterns.glider((g,20),random.randint(1,4),game.environment)
+    for g in range(20,100,5):
+        Patterns.glider((g,20),random.randint(1,4),game.environment)
 
     #Patterns.glider((10,10), 1, game.environment)
 
