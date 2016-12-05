@@ -13,18 +13,31 @@ class Organism:
         self.neighbors = [(x-1,y-1),(x,y-1),(x+1,y-1),(x-1,y),(x+1,y),(x-1,y+1),(x,y+1),(x+1,y+1)]
 
 class Environment:
-    def __init__(self):
+    MIN_MAGNITUDE = 4
+
+    def __init__(self, size):
+
+        self.width,self.height = size
+        self.width /= self.MIN_MAGNITUDE
+        self.height /= self.MIN_MAGNITUDE
+
+        print self.width, self.height
         self.organisms = []
         self.deads_position = []
-        self.state_map = [[0 for x in xrange(800)] for y in xrange(600)]
+        self.state_map = [[0 for x in xrange(self.width)] for y in xrange(self.height)]
 
     def is_empty(self):
         return  not (len(self.organisms))
 
     def add_organism(self,position):
-        if (position[0] > 0) and (position[1] > 0):
-            org = Organism(position[0],position[1],1)
-            self.organisms.append(org)
+        x = self.width / self.MIN_MAGNITUDE
+        y = self.height / self.MIN_MAGNITUDE
+
+        if 0 <= position[0] <= x:
+            if  0 <= position[1] <= y:
+                print position
+                org = Organism(position[0],position[1],1)
+                self.organisms.append(org)
 
     def remove_organism(self,position):
         l = self.find_organism_by_pos(position)
@@ -64,11 +77,11 @@ class Environment:
 
     def __checking_neighbors(self, organisms):
         l_neighbors_position = []
-        i = 0
+
         for organism in organisms:
             for neighbor_position in organism.neighbors:
                 if (neighbor_position[0] > 0) and (neighbor_position[1] > 0):
-                    i +=1
+
                     found = False
                     list_neig = filter(lambda x:x.position == neighbor_position,organisms)
                     if len(list_neig) > 0:
@@ -79,9 +92,8 @@ class Environment:
                     if found == False:
                         if neighbor_position not in l_neighbors_position:
                             l_neighbors_position.append(neighbor_position)
-                    if organism.qtd_neighbors > 3:
-                        break
-        print i
+
+
         return l_neighbors_position
 
     def __checking_deads(self,l,organisms):
@@ -189,7 +201,7 @@ class Game:
     def __init__(self,name):
         self.name = name
         self.generation = 0
-        self.environment = Environment()
+        self.environment = Environment((self.WIDTH,self.HEIGHT))
         self.board = Board((self.WIDTH,self.HEIGHT))
 
         self.running = True
@@ -231,13 +243,13 @@ class Game:
 
 
 
-            #os.system(self.SLEEP)
+            os.system(self.SLEEP)
 
     def __get_pos(self):
         (mouseX, mouseY) = pygame.mouse.get_pos()
         mouseX = (mouseX - self.board.PORTION) / (self.board.MAGNITUDE + self.board.BORDER)
         mouseY = (mouseY - self.board.PORTION) / (self.board.MAGNITUDE + self.board.BORDER)
-
+        print (mouseX,mouseY)
         return (mouseX,mouseY)
 
     def __toggle_pos(self,found,pos):
@@ -373,13 +385,13 @@ if __name__ == "__main__":
 
     game = Game("Game of Life")
 
-    fill_environment(game.environment)
+    #fill_environment(game.environment)
 
 
-    #for g in range(20,30,5):
-        #Patterns.glider((g,20),random.randint(1,4),game.environment)
+    #for g in range(20,100,5):
+     #   Patterns.glider((g,20),random.randint(1,4),game.environment)
 
-    #Patterns.glider((0,0), 1, game.environment)
+    #Patterns.glider((10,10), 1, game.environment)
 
 
 
