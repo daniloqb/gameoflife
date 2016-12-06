@@ -3,7 +3,6 @@
 import os
 import time
 import pygame
-import gc
 
 
 class Cell:
@@ -35,7 +34,7 @@ class Environment:
         return not (len(self.live_cells))
 
     def find_cell_by_location(self, location):
-        l = filter(lambda x: x == location, self.live_cells)
+        l = filter(lambda x: x.location == location, self.live_cells)
         return l
 
     def add_cell(self, location, state):
@@ -43,7 +42,7 @@ class Environment:
         s_location = self.__sanitize_location(location)
         if s_location[0] < self.width and s_location[1] < self.height:
             if not (self.find_cell_by_location(s_location)):
-                self.live_cells.add(s_location,state)
+                self.live_cells.add(Cell(s_location,state))
                 self.cells_state_map[s_location[0]][s_location[1]] = self.STATES['live']
 
     def remove_cell(self,location):
@@ -54,6 +53,7 @@ class Environment:
         if l:
             self.live_cells.remove(l[0])
             self.cells_state_map[s_location[0]][s_location[1]] = self.STATES['free']
+            del l[0]
 
             return True
         else:

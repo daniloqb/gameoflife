@@ -88,17 +88,17 @@ if __name__ == "__main__":
 
     game = gof.Game("Game of Life")
 
-    gof.fill_environment(game.environment)
+    #gof.fill_environment(game.environment)
 
 
-    #for g in range(0,1000,5):
-     #   gof.Patterns.glider((g,g),random.randint(1,4),game.environment)
+    for g in range(0,1000,5):
+        gof.Patterns.glider((random.randint(0,g),g),random.randint(1,4),game.environment)
 
     #gof.Patterns.glider((10,10), 1, game.environment)
 
 
 
-    while game.running and game.generation < 72:
+    while game.running:
 
         game.event()
         game.update()
