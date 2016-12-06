@@ -24,8 +24,8 @@ class Environment:
         self.width /= self.MIN_MAGNITUDE
         self.height /= self.MIN_MAGNITUDE
 
-        self.live_cells = []
-        self.free_cells = []
+        self.live_cells = set()
+        self.free_cells = set()
 
         self.cells_state_map = [[0 for y in xrange(self.height)] for x in xrange(self.width)]
 
@@ -42,12 +42,13 @@ class Environment:
         s_location = self.__sanitize_location(location)
         if s_location[0] < self.width and s_location[1] < self.height:
             if not (self.find_cell_by_location(s_location)):
-                self.live_cells.append(Cell(s_location,state))
+                self.live_cells.add(Cell(s_location,state))
                 self.cells_state_map[s_location[0]][s_location[1]] = self.STATES['live']
 
     def remove_cell(self,location):
 
-        s_location = self.__sanitize_location(location)
+        #s_location = self.__sanitize_location(location)
+        s_location = location
         l = self.find_cell_by_location(s_location)
         if l:
             self.live_cells.remove(l[0])
@@ -60,22 +61,23 @@ class Environment:
 
     def update(self):
 
-        list_free_neighbors_cells = []
-        list_live_neighbors_cells = []
+        set_free_neighbors_cells = set()
+        set_live_neighbors_cells = set()
         list_new_cells = []
 
         for cell in self.live_cells:
-            start_time = time.time()
-            neighbors = self.get_neighbors_location(cell.location)
+            neighbors = set(self.get_neighbors_location(cell.location))
 
-            list_live_neighbors_cells = self.__checking_live_neighbors(neighbors)
-            cell.qtd_neighbors = len(list_live_neighbors_cells)
-            list_free_neighbors_cells += self.__checking_free_neighbors(neighbors)
+            set_live_neighbors_cells = set(self.__checking_live_neighbors(neighbors))
+            cell.qtd_neighbors = len(set_live_neighbors_cells)
+            #neighbors =  filter(lambda x: x not in set_live_neighbors_cells, neighbors)
+            neighbors -= set_live_neighbors_cells
+            set_free_neighbors_cells |= set(self.__checking_free_neighbors(neighbors))
 
-        list_free_neighbors_cells = list(set(list_free_neighbors_cells))
+        #set_free_neighbors_cells = list(set(set_free_neighbors_cells))
 
-        list_new_cells = self.__check_new_cells(list_free_neighbors_cells)
-        self.free_cells = self.__kill_cells()
+        list_new_cells = self.__check_new_cells(set_free_neighbors_cells)
+        self.free_cells = set(self.__kill_cells())
         self.__born_cells(list_new_cells)
 
 
@@ -112,7 +114,7 @@ class Environment:
     def __check_new_cells(self,list_of_cells_location):
         list_new_cells = []
         for location in list_of_cells_location:
-            neighbors = self.get_neighbors_location(location)
+            neighbors = set(self.get_neighbors_location(location))
             list_live_neighbors_cells = self.__checking_live_neighbors(neighbors)
             if len(list_live_neighbors_cells) == 3:
                 list_new_cells.append(location)
@@ -378,7 +380,7 @@ class Patterns:
 
 def fill_environment(environment):
 
-    for x in range(0,100):
-        for y in range(0,100):
+    for x in range(15,60):
+        for y in range(15,60):
             environment.add_cell((x, y),1)
 
