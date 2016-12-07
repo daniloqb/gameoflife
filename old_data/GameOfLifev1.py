@@ -25,23 +25,26 @@ class Environment:
         self.width /= self.MIN_MAGNITUDE
         self.height /= self.MIN_MAGNITUDE
 
-        self.live_cells = []
+        self.live_cells = set()
+        self.free_cells = set()
 
+        self.cells_state_map = [[0 for y in xrange(self.height)] for x in xrange(self.width)]
 
 
     def is_empty(self):
         return not (len(self.live_cells))
 
     def find_cell_by_location(self, location):
-        l = filter(lambda x: x.location == location, self.live_cells)
+        l = filter(lambda x: x == location, self.live_cells)
         return l
 
-    def add_cell(self, location, type):
+    def add_cell(self, location, state):
 
         s_location = self.__sanitize_location(location)
         if s_location[0] < self.width and s_location[1] < self.height:
             if not (self.find_cell_by_location(s_location)):
-                self.live_cells.append(Cell(s_location,type))
+                self.live_cells.add(s_location)
+                self.cells_state_map[s_location[0]][s_location[1]] = self.STATES['live']
 
     def remove_cell(self,location):
 
@@ -50,27 +53,39 @@ class Environment:
         l = self.find_cell_by_location(s_location)
         if l:
             self.live_cells.remove(l[0])
-            del l[0]
+            self.cells_state_map[s_location[0]][s_location[1]] = self.STATES['free']
 
             return True
         else:
             return False
 
-    def update(self,cell):
+    def update(self):
 
-        if cell in self.live_cells:
+        set_free_neighbors_cells = set()
+        set_live_neighbors_cells = set()
+        list_new_cells = []
+        set_cells_to_dead = set()
 
-            neighbors = set(self.get_neighbors_location(cell.location))
+        for cell in self.live_cells:
+            neighbors = set(self.get_neighbors_location(cell))
+
+            set_live_neighbors_cells = set(self.__checking_live_neighbors(neighbors))
+            qtd_neighbors = len(set_live_neighbors_cells)
+            if qtd_neighbors < 2 or qtd_neighbors > 3:
+                set_cells_to_dead.add(cell)
+            neighbors -= set_live_neighbors_cells
+            set_free_neighbors_cells |= set(self.__checking_free_neighbors(neighbors))
+
+
+        list_new_cells = self.__check_new_cells(set_free_neighbors_cells)
+        self.free_cells = set_cells_to_dead
+        self.__kill_cells(set_cells_to_dead)
+        self.__born_cells(list_new_cells)
 
 
 
 
-
-
-    def get_neighbors_location(self,location):
-        return map(lambda x: ((location[0] - x[0]) % self.width, (location[1] - x[1]) % self.height),self.cell_neighbors_location)
-
-
+    # MODEL Functions
 
     def __checking_live_neighbors(self,neighbors):
         live_neighbors_list =   filter(lambda x: self.cells_state_map[x[0]][x[1]] == self.STATES['live'],neighbors)
@@ -80,6 +95,28 @@ class Environment:
         free_neighbors_list = filter(lambda x: self.cells_state_map[x[0]][x[1]] == self.STATES['free'],
                                             neighbors)
         return  free_neighbors_list
+
+    def __kill_cells(self,set_cells_to_dead):
+        for cell in set_cells_to_dead:
+            self.remove_cell(cell)
+
+    def __born_cells(self,list_new_cells):
+        for cell in list_new_cells:
+            self.add_cell(cell,self.STATES['live'])
+
+    def __check_new_cells(self,list_of_cells_location):
+        list_new_cells = []
+        for location in list_of_cells_location:
+            neighbors = set(self.get_neighbors_location(location))
+            list_live_neighbors_cells = self.__checking_live_neighbors(neighbors)
+            if len(list_live_neighbors_cells) == 3:
+                list_new_cells.append(location)
+        return list_new_cells
+
+
+    def get_neighbors_location(self,location):
+        return map(lambda x: ((location[0] - x[0]) % self.width, (location[1] - x[1]) % self.height),self.cell_neighbors_location)
+
 
     # HELPER FUNCTION
     def __sanitize_location(self, location):
@@ -115,15 +152,12 @@ class Board:
         self.width,self.height = resolution
         pygame.init()
         self.windowSurface = pygame.display.set_mode(resolution, 0, 32)
-        self.x_range = self.width / (self.MAGNITUDE + self.BORDER)
-        self.y_range = self.height / (self.MAGNITUDE + self.BORDER)
         self.drawBoard()
 
     def drawBoard(self):
         self.windowSurface.fill(self.WHITE)
-
-        for x in xrange(self.x_range):
-            for y  in xrange(self.y_range):
+        for x in range(self.width / (self.MAGNITUDE + self.BORDER)):
+            for y  in range(self.height / (self.MAGNITUDE + self.BORDER)):
                 self.drawCell((x,y),0)
 
     def set_title(self,title):
