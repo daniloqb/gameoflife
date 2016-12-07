@@ -43,7 +43,7 @@ class Environment:
         s_location = self.__sanitize_location(location)
         if s_location[0] < self.width and s_location[1] < self.height:
             if not (self.find_cell_by_location(s_location)):
-                self.live_cells.add(s_location,state)
+                self.live_cells.add(s_location)
                 self.cells_state_map[s_location[0]][s_location[1]] = self.STATES['live']
 
     def remove_cell(self,location):
@@ -64,20 +64,23 @@ class Environment:
         set_free_neighbors_cells = set()
         set_live_neighbors_cells = set()
         list_new_cells = []
+        set_cells_to_dead = set()
 
         for cell in self.live_cells:
-            neighbors = set(self.get_neighbors_location(cell.location))
+            neighbors = set(self.get_neighbors_location(cell))
 
             set_live_neighbors_cells = set(self.__checking_live_neighbors(neighbors))
-            cell.qtd_neighbors = len(set_live_neighbors_cells)
-            #neighbors =  filter(lambda x: x not in set_live_neighbors_cells, neighbors)
+            qtd_neighbors = len(set_live_neighbors_cells)
+            if qtd_neighbors < 2 or qtd_neighbors > 3:
+                set_cells_to_dead.add(cell)
             neighbors -= set_live_neighbors_cells
             set_free_neighbors_cells |= set(self.__checking_free_neighbors(neighbors))
 
         #set_free_neighbors_cells = list(set(set_free_neighbors_cells))
 
         list_new_cells = self.__check_new_cells(set_free_neighbors_cells)
-        self.free_cells = set(self.__kill_cells())
+        self.free_cells = set_cells_to_dead
+        self.__kill_cells(set_cells_to_dead)
         self.__born_cells(list_new_cells)
 
 
@@ -94,18 +97,9 @@ class Environment:
                                             neighbors)
         return  free_neighbors_list
 
-    def __kill_cells(self):
-        list_cells_to_kill = []
-        for cell in self.live_cells:
-            if cell.qtd_neighbors < 2 or cell.qtd_neighbors > 3:
-                list_cells_to_kill.append(cell.location)
-            else:
-                cell.qtd_neighbors = 0
-
-        for cell_to_kill in list_cells_to_kill:
-            self.remove_cell(cell_to_kill)
-
-        return list_cells_to_kill
+    def __kill_cells(self,set_cells_to_dead):
+        for cell in set_cells_to_dead:
+            self.remove_cell(cell)
 
     def __born_cells(self,list_new_cells):
         for cell in list_new_cells:
@@ -229,7 +223,7 @@ class Game:
             self.board.drawCell(free_location, 0)
 
         for cell in self.environment.live_cells:
-            self.board.drawCell(cell.location, 1)
+            self.board.drawCell(cell, 1)
 
 
     def update(self):
