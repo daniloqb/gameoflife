@@ -6,7 +6,8 @@ import pygame
 
 
 class Cell:
-    def __init__(self,type):
+    def __init__(self, location, type):
+        self.location =location
         self.type = type
         self.qtd_neighbors = 0
 
@@ -23,42 +24,105 @@ class Environment:
         self.width /= self.MIN_MAGNITUDE
         self.height /= self.MIN_MAGNITUDE
 
-        self.cells_map =  [[0 for y in xrange(self.height)] for x in xrange(self.width)]
-        self.screen_map =  [[0 for y in xrange(self.height)] for x in xrange(self.width)]
+        self.live_cells = []
+
+        self.cells_to_dead = []
+        self.cells_to_born = []
 
 
 
     def is_empty(self):
-        pass
+        return not (len(self.live_cells))
 
     def find_cell_by_location(self, location):
-        pass
+        l = filter(lambda x: x.location == location, self.live_cells)
+        return l
+
+    def find_cell_to_born(self, location):
+        l = filter(lambda x: x[0] == location, self.cells_to_born)
+        return l
 
     def add_cell(self, location, type):
 
         s_location = self.__sanitize_location(location)
         if s_location[0] < self.width and s_location[1] < self.height:
-            self.cells_map[s_location[0]][s_location[1]] = (Cell(type))
-            self.screen_map[s_location[0]][s_location[1]] = type
+            if not (self.find_cell_by_location(s_location)):
+                self.live_cells.append(Cell(s_location,type))
 
-    def remove_cell(self, location):
+    def remove_cell(self,location):
 
-        cell = self.cells_map[location[0]][location[1]]
-        if cell:
-            self.cells_map[location[0]][location[1]] = 0
-            self.screen_map[location[0]][location[1]] = self.STATES['free']
-            del cell
+        #s_location = self.__sanitize_location(location)
+        s_location = location
+        l = self.find_cell_by_location(s_location)
+        if l:
+            self.live_cells.remove(l[0])
+            del l[0]
 
             return True
         else:
             return False
 
     def update(self,cell):
-        pass
+        if cell in self.live_cells:
+
+            neighbors = set(self.get_neighbors_location(cell.location))
+
+            list_live_neighbors = self.__checking_live_neighbors(neighbors,cell.type)
+            qtd_neighbors = len(list_live_neighbors)
+            if qtd_neighbors < 2 or qtd_neighbors > 3:
+                self.cells_to_dead.append(cell.location)
+            neighbors -= set(list_live_neighbors)
+            list_free_neighbors = self.__checking_free_neighbors(neighbors)
+            list_new_cells = self.__checking_new_cells(list_free_neighbors,cell.type)
+
+            if list_new_cells:
+                for new_cell in list_new_cells:
+                    if not self.find_cell_to_born(new_cell):
+                        self.cells_to_born.append([(new_cell),cell.type])
 
 
     def get_neighbors_location(self,location):
         return map(lambda x: ((location[0] - x[0]) % self.width, (location[1] - x[1]) % self.height),self.cell_neighbors_location)
+
+
+
+    def __checking_live_neighbors(self, neighbors, type):
+
+        #live_neighbors_list =   filter(lambda x: self.cells_state_map[x[0]][x[1]] == self.STATES['live'],neighbors)
+        live_neighbors_list = []
+        for neighbor in neighbors:
+            cell = self.find_cell_by_location(neighbor)
+            if cell:
+                if cell[0].type == type:
+                    live_neighbors_list.append(cell[0].location)
+        return live_neighbors_list
+
+    def __checking_free_neighbors(self, neighbors):
+        free_neighbors_list = filter(lambda x: not self.find_cell_by_location(x),
+                                            neighbors)
+        return  free_neighbors_list
+
+
+    def __checking_new_cells(self,list_of_cells_location, type):
+        list_new_cells = []
+        for location in list_of_cells_location:
+            neighbors = set(self.get_neighbors_location(location))
+            list_live_neighbors_cells = self.__checking_live_neighbors(neighbors, type)
+            if len(list_live_neighbors_cells) == 3:
+                list_new_cells.append(location)
+        return list_new_cells
+
+
+    def born_cells(self):
+        for cell in self.cells_to_born:
+            self.add_cell(cell[0],cell[1])
+        self.cells_to_born = []
+
+    def kill_cells(self):
+
+        for cell_to_kill in self.cells_to_dead:
+            self.remove_cell(cell_to_kill)
+        self.cells_to_dead = []
 
 
 
@@ -70,10 +134,9 @@ class Environment:
 
     # DEBUG FUNCTIONS
     def show_live_cells_location(self):
-        for row in self.cells_map:
-            for cell in row:
-                print cell.type,
-            print
+        for cell in self.live_cells:
+            print '({} {})'.format(cell.location,cell.qtd_neighbors),
+        print
 
     def show_cell_state_map(self):
         for l in range(len(self.cells_state_map)):
@@ -91,7 +154,6 @@ class Board:
     BORDER = 2
     MAGNITUDE = 6
     PORTION = MAGNITUDE / 2
-    SCALE = MAGNITUDE + BORDER
 
     def __init__(self,resolution):
 
@@ -103,35 +165,30 @@ class Board:
 
     def drawBoard(self):
         self.windowSurface.fill(self.WHITE)
-        self.update()
 
-    def draw_empty_cells(self):
         for x in xrange(self.width):
             for y  in xrange(self.height):
                 self.drawCell((x,y),0)
+
+        self.update()
 
     def set_title(self,title):
         pygame.display.set_caption(title)
 
     def update(self):
-        self.draw_empty_cells()
         pygame.display.update()
 
-    def update_screen(self,screen_map):
-        x_range = len(screen_map)
-        y_range = len(screen_map[0])
-
-        for x in xrange(x_range):
-            for y in range(y_range):
-                self.drawCell((x,y),screen_map[x][y])
-        pygame.display.update()
 
     def drawCell(self,position,state):
 
         color = (self.BLUE,self.YELLOW, self.GREEN)[state]
+        mag = self.MAGNITUDE + self.BORDER
 
-        x = (position[0] * self.SCALE) + self.MAGNITUDE
-        y = (position[1] * self.SCALE) + self.MAGNITUDE
+        xo = self.MAGNITUDE
+        yo = self.MAGNITUDE
+
+        x = (position[0] * mag) + xo
+        y = (position[1] * mag) + yo
 
         if (0 < x < self.width) and (0 < y < self.height):
             pygame.draw.polygon(self.windowSurface, color, ((x-self.PORTION, y-self.PORTION), (x+self.PORTION, y-self.PORTION), (x+self.PORTION, y+self.PORTION), (x-self.PORTION, y+self.PORTION)))
@@ -142,7 +199,6 @@ class Board:
             self.MAGNITUDE += mag
             self.PORTION = self.MAGNITUDE / 2
             self.drawBoard()
-            self.SCALE = self.MAGNITUDE + self.BORDER
 
 
 

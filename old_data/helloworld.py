@@ -193,7 +193,7 @@ while running:
             for y in range(0,700,12):
                 drawBoard(x,y)
                 '''
-        os.system("sleep 0.1")
+        os.system("sleep 0")
         for x in range(len(screen)):
             for y in range(len(screen[0])):
                 check(x,y)
