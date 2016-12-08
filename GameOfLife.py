@@ -372,7 +372,7 @@ class Patterns:
 
 def fill_environment(environment):
 
-    for x in range(30,80):
-        for y in range(60,61):
+    for x in range(20,100):
+        for y in range(10,81):
             environment.add_cell((x, y),1)
 
