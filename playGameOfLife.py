@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     game = gof.Game("Game of Life",(1024,768))
 
-    #gof.fill_environment(game.environment)
+    gof.fill_environment(game.environment)
 
 
     #for g in range(0,10000,5):

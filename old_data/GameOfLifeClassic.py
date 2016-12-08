@@ -17,30 +17,12 @@ class Cell:
     cell_neighbors_location = ((0, -1), (0, 1), (1, 0), (-1, 0), (1, -1), (1, 1), (-1, -1), (-1, 1))
     #cell_neighbors_location = ((0, -1), (0, 1), (1, 0), (-1, 0))
     #cell_neighbors_location = ((1, -1), (1, 1), (-1, -1), (-1, 1))
-    def __init__(self,type):
+    def __init__(self,type,):
         self.type = type
-
-    def check(self,location,limits,cells_map):
-        neighbors = self.get_neighbors_location(location, limits)
-        qtd_neighbors = len(Environment.checking_live_neighbors(cells_map, neighbors, 1))
-
-        if self.type == 0:
-            if qtd_neighbors == 3:
-                return 1
-            else:
-                return 0
-        elif self.type == 1:
-            if qtd_neighbors < 2 or qtd_neighbors > 3:
-                return 0
-            else:
-                return 1
-
 
     def get_neighbors_location(self,location, limits):
             return map(lambda x: ((location[0] - x[0]) % limits[0], (location[1] - x[1]) % limits[1]),
                        self.cell_neighbors_location)
-
-
 
 
 class Environment:
@@ -71,6 +53,7 @@ class Environment:
             self.cells_map[s_location[0]][s_location[1]] = (Cell(type))
             self.screen_map[s_location[0]][s_location[1]] = type
 
+
     def remove_cell(self, location):
 
         cell = self.cells_map[location[0]][location[1]]
@@ -84,21 +67,11 @@ class Environment:
         else:
             return False
 
-
-
-    def check(self):
-        for x, row in enumerate(self.cells_map):
-            for y, cell in enumerate(row):
-                result = cell.check((x,y),(self.width, self.height), self.cells_map)
-                self.screen_map[x][y] = result
-
-
-    '''
     def check(self):
         for x,row in enumerate(self.cells_map):
             for y,cell in enumerate(row):
                 neighbors = cell.get_neighbors_location((x,y),(self.width,self.height))
-                qtd_neighbors = len(Environment.checking_live_neighbors(self.cells_map,neighbors,1))
+                qtd_neighbors = len(self.__checking_live_neighbors(neighbors,1))
                 if cell.type == 0 and qtd_neighbors ==3:
                     self.screen_map[x][y] = 1
                 elif cell.type == 1:
@@ -106,8 +79,8 @@ class Environment:
                         self.screen_map[x][y] = 0
                     else:
                         self.screen_map[x][y] = 1
-    '''
 
+    '''
     def update(self):
         for x, row in enumerate(self.screen_map):
             for y, item in enumerate(row):
@@ -121,11 +94,9 @@ class Environment:
             for y in xrange(len(self.screen_map[0])):
                 if self.cells_map[x][y].type != self.screen_map[x][y]:
                     self.cells_map[x][y] = Cell(self.screen_map[x][y])
-    '''
 
-    @staticmethod
-    def checking_live_neighbors(cells_map, neighbors, type):
-        return  filter(lambda x: cells_map[x[0]][x[1]].type == type,neighbors)
+    def __checking_live_neighbors(self, neighbors, type):
+        return  filter(lambda x: self.cells_map[x[0]][x[1]].type == type,neighbors)
 
            # HELPER FUNCTION
     def __sanitize_location(self, location):
@@ -242,7 +213,7 @@ class Game:
             self.board.update_screen(self.environment.cells_map)
             self.environment.update()
 
-            #print "Generation: ",self.generation
+            print "Generation: ",self.generation
             self.generation +=1
 
 
@@ -372,7 +343,7 @@ class Patterns:
 
 def fill_environment(environment):
 
-    for x in range(30,80):
-        for y in range(60,61):
+    for x in range(170):
+        for y in range(110):
             environment.add_cell((x, y),1)
 
