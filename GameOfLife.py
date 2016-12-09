@@ -21,19 +21,28 @@ class Cell:
         self.type = type
 
     def check(self,location,limits,cells_map):
-        neighbors = self.get_neighbors_location(location, limits)
-        qtd_neighbors = len(Environment.checking_live_neighbors(cells_map, neighbors, 1))
+        neighbors = set(self.get_neighbors_location(location, limits))
+        list_live_neighbors = Environment.checking_neighbors(cells_map, neighbors, self.type)
+        qtd_neighbors = len(list_live_neighbors)
 
-        if self.type == 0:
-            if qtd_neighbors == 3:
-                return 1
-            else:
-                return 0
-        elif self.type == 1:
-            if qtd_neighbors < 2 or qtd_neighbors > 3:
-                return 0
-            else:
-                return 1
+        if qtd_neighbors < 2 or qtd_neighbors > 3:
+            result = 0
+        else:
+            result = self.type
+
+        neighbors -=set(list_live_neighbors)
+        list_free_neighbors = Environment.checking_neighbors(cells_map, neighbors, 0)
+
+        list_to_born = []
+        for free_cell in list_free_neighbors:
+            neighbors = set(self.get_neighbors_location(free_cell, limits))
+            qtd_born = len(Environment.checking_neighbors(cells_map, neighbors, self.type))
+            if qtd_born == 3:
+                list_to_born.append(free_cell)
+
+
+
+        return (result,list_to_born)
 
 
     def get_neighbors_location(self,location, limits):
@@ -89,24 +98,14 @@ class Environment:
     def check(self):
         for x, row in enumerate(self.cells_map):
             for y, cell in enumerate(row):
-                result = cell.check((x,y),(self.width, self.height), self.cells_map)
-                self.screen_map[x][y] = result
+                if cell.type != 0:
 
+                    result = cell.check((x,y),(self.width, self.height), self.cells_map)
+                    self.screen_map[x][y] = result[0]
 
-    '''
-    def check(self):
-        for x,row in enumerate(self.cells_map):
-            for y,cell in enumerate(row):
-                neighbors = cell.get_neighbors_location((x,y),(self.width,self.height))
-                qtd_neighbors = len(Environment.checking_live_neighbors(self.cells_map,neighbors,1))
-                if cell.type == 0 and qtd_neighbors ==3:
-                    self.screen_map[x][y] = 1
-                elif cell.type == 1:
-                    if qtd_neighbors < 2 or qtd_neighbors > 3:
-                        self.screen_map[x][y] = 0
-                    else:
-                        self.screen_map[x][y] = 1
-    '''
+                    list_to_born = result[1]
+                    for free_cell in list_to_born:
+                        self.screen_map[free_cell[0]][free_cell[1]] = cell.type
 
     def update(self):
         for x, row in enumerate(self.screen_map):
@@ -115,17 +114,11 @@ class Environment:
                 if  cell.type != item:
                     del cell
                     self.cells_map[x][y] = Cell(item)
-    '''
-    def update(self):
-        for x in xrange(len(self.screen_map)):
-            for y in xrange(len(self.screen_map[0])):
-                if self.cells_map[x][y].type != self.screen_map[x][y]:
-                    self.cells_map[x][y] = Cell(self.screen_map[x][y])
-    '''
 
     @staticmethod
-    def checking_live_neighbors(cells_map, neighbors, type):
+    def checking_neighbors(cells_map, neighbors, type):
         return  filter(lambda x: cells_map[x[0]][x[1]].type == type,neighbors)
+
 
            # HELPER FUNCTION
     def __sanitize_location(self, location):
@@ -225,6 +218,8 @@ class Game:
 
         self.pattern = ""
         self.pattern_orientation = 1
+        self.type = 1
+        self.size = 2
 
 
     def pause(self):
@@ -260,7 +255,7 @@ class Game:
             self.environment.remove_cell(pos)
 
         else:
-            self.environment.add_cell(pos,1)
+            self.environment.add_cell(pos,self.type)
 
 
 
@@ -279,9 +274,11 @@ class Game:
     def __add_pattern(self,pos):
 
         if self.pattern == "glider":
-            Patterns.glider(pos,1,self.pattern_orientation,self.environment)
+            Patterns.glider(pos,self.type,self.pattern_orientation,self.environment)
         elif self.pattern == "lwss":
-            Patterns.lwss(pos,1,self.pattern_orientation,self.environment)
+            Patterns.lwss(pos,self.type,self.pattern_orientation,self.environment)
+        elif self.pattern == "square":
+            Patterns.square(pos, self.type, self.size, self.environment)
 
 
     def event(self):
@@ -317,13 +314,31 @@ class Game:
                     self.board.zoom(-2)
 
                 # patterns
+                elif event.key == pygame.K_KP_MINUS:
+                    if self.size > 2:
+                        self.size -= 2
+                elif event.key == pygame.K_KP_PLUS:
+                    if self.size < 100:
+                        self.size += 2
                 elif event.key == pygame.K_1:
-                    self.pattern = "glider"
+                    self.type = 1
                 elif event.key == pygame.K_2:
+                    self.type = 2
+                elif event.key == pygame.K_3:
+                    self.type = 3
+                elif event.key == pygame.K_4:
+                    self.type = 4
+                elif event.key == pygame.K_g:
+                    self.pattern = "glider"
+                elif event.key == pygame.K_l:
                     self.pattern = "lwss"
+                elif event.key == pygame.K_s:
+                    self.pattern = "square"
                 elif event.key == pygame.K_DELETE:
                     self.pattern = ""
                     self.pattern_position = 1
+                    self.type = 1
+                    self.size = 2
 
 
 
@@ -368,6 +383,13 @@ class Patterns:
 
         for position in l:
             environment.add_cell(position,type)
+
+
+    @staticmethod
+    def square(position,type,size,environment):
+        for x in range(position[0] - size / 2, position[0] + size / 2):
+            for y in range(position[1] - size / 2, position[1] + size / 2):
+                environment.add_cell((x,y),type)
 
 
 def fill_environment(environment):
