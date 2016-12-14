@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import GameOfLife as gol
+import GameOfLifeClassic as gol
 
 import random
 

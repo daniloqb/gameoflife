@@ -10,10 +10,60 @@ The code could be more simple.1
 
 import pygame
 import random
-from ConwayPatterns import *
 
 class Cell:
+    id = 0;
+    def __init__(self, type):
+        self.type = type
 
+    def check(self, location, limits, cells_map):
+        return (self.id, self.type)
+
+
+    def get_neighbors_location(self, location, limits):
+        return map(lambda x: ((location[0] - x[0]) % limits[0], (location[1] - x[1]) % limits[1]),
+                   self.cell_neighbors_location)
+
+class WallCell(Cell):
+
+    id = 2
+    #cell_neighbors_location = ((0, -1), (0, 1), (1, 0), (-1, 0), (1, -1), (1, 1), (-1, -1), (-1, 1))
+
+    #cell_neighbors_location = ((0, -1), (0, 1), (1, 0), (-1, 0))
+    cell_neighbors_location = ((1, -1), (1, 1), (-1, -1), (-1, 1))
+
+    def __init__(self,type):
+        self.type = type
+
+    def check(self,location,limits,cells_map):
+
+        result = (self.id,self.type)
+
+
+
+        return (result,[])
+
+
+
+class WalkCell(Cell):
+
+    id = 3
+
+    def __init__(self,type):
+        self.type = type
+
+    def check(self,location,limits,cells_map):
+
+        result = (0,0)
+
+
+
+        return (result,[((location[0]+1)%limits[0],(location[1]+1)%limits[1])])
+
+
+
+class ConwayCell(Cell):
+    id = 1
     cell_neighbors_location = ((0, -1), (0, 1), (1, 0), (-1, 0), (1, -1), (1, 1), (-1, -1), (-1, 1))
     #cell_neighbors_location = ((0, -1), (0, 1), (1, 0), (-1, 0))
     #cell_neighbors_location = ((1, -1), (1, 1), (-1, -1), (-1, 1))
@@ -26,9 +76,9 @@ class Cell:
         qtd_neighbors = len(list_live_neighbors)
 
         if qtd_neighbors < 2 or qtd_neighbors > 3:
-            result = 0
+            result = (0,0)
         else:
-            result = self.type
+            result = (self.id,self.type)
 
         neighbors -=set(list_live_neighbors)
         list_free_neighbors = Environment.checking_neighbors(cells_map, neighbors, 0)
@@ -44,10 +94,6 @@ class Cell:
 
         return (result,list_to_born)
 
-
-    def get_neighbors_location(self,location, limits):
-            return map(lambda x: ((location[0] - x[0]) % limits[0], (location[1] - x[1]) % limits[1]),
-                       self.cell_neighbors_location)
 
 
 
@@ -65,7 +111,7 @@ class Environment:
         self.height /= self.MIN_MAGNITUDE
 
         self.cells_map =  [[Cell(0) for y in xrange(self.height)] for x in xrange(self.width)]
-        self.screen_map =  [[0 for y in xrange(self.height)] for x in xrange(self.width)]
+        self.screen_map =  [[(0,0) for y in xrange(self.height)] for x in xrange(self.width)]
 
     def is_empty(self):
         pass
@@ -77,15 +123,25 @@ class Environment:
 
         s_location = self.__sanitize_location(location)
         if s_location[0] < self.width and s_location[1] < self.height:
-            self.cells_map[s_location[0]][s_location[1]] = (Cell(type))
-            self.screen_map[s_location[0]][s_location[1]] = type
+
+            cell_id = type[0]
+            if cell_id == 0:
+                self.cells_map[s_location[0]][s_location[1]] = (Cell(type[1]))
+            elif cell_id == 1:
+                self.cells_map[s_location[0]][s_location[1]] = (ConwayCell(type[1]))
+            elif cell_id == 2:
+                self.cells_map[s_location[0]][s_location[1]] = (WallCell(type[1]))
+            elif cell_id == 3:
+                self.cells_map[s_location[0]][s_location[1]] = (WalkCell(type[1]))
+
+            self.screen_map[s_location[0]][s_location[1]] = (type)
 
     def remove_cell(self, location):
 
         cell = self.cells_map[location[0]][location[1]]
         if cell:
             self.cells_map[location[0]][location[1]] = Cell(0)
-            self.screen_map[location[0]][location[1]] = 0
+            self.screen_map[location[0]][location[1]] = 0,0
 
             del cell
 
@@ -96,25 +152,25 @@ class Environment:
 
 
     def check(self):
-
         for x, row in enumerate(self.cells_map):
             for y, cell in enumerate(row):
-                if cell.type != 0:
-                    #print "({},{}) ".format(x,y),
+                if cell.id != 0 and cell.type != 0:
+
                     result = cell.check((x,y),(self.width, self.height), self.cells_map)
                     self.screen_map[x][y] = result[0]
 
                     list_to_born = result[1]
                     for free_cell in list_to_born:
-                        self.screen_map[free_cell[0]][free_cell[1]] = cell.type
-        print
+                        self.screen_map[free_cell[0]][free_cell[1]] = (cell.id,cell.type)
+
     def update(self):
         for x, row in enumerate(self.screen_map):
             for y, item in enumerate(row):
                 cell = self.cells_map[x][y]
-                if  cell.type != item:
+                if  cell.id != item[0] or cell.type != item[1]:
                     del cell
-                    self.cells_map[x][y] = Cell(item)
+                    #self.cells_map[x][y] = ConwayCell(item)
+                    self.add_cell((x,y),item)
 
     @staticmethod
     def checking_neighbors(cells_map, neighbors, type):
@@ -221,6 +277,7 @@ class Game:
         self.pattern_orientation = 1
         self.type = 1
         self.size = 2
+        self.id = 1
 
 
     def pause(self):
@@ -256,7 +313,7 @@ class Game:
             self.environment.remove_cell(pos)
 
         else:
-            self.environment.add_cell(pos,self.type)
+            self.environment.add_cell(pos,(self.id,self.type))
 
 
 
@@ -275,11 +332,11 @@ class Game:
     def __add_pattern(self,pos):
 
         if self.pattern == "glider":
-            ConwayPatterns.glider(pos, self.type, self.pattern_orientation, self.environment)
+            Patterns.glider(pos,(1,self.type),self.pattern_orientation,self.environment)
         elif self.pattern == "lwss":
-            ConwayPatterns.lwss(pos, self.type, self.pattern_orientation, self.environment)
+            Patterns.lwss(pos,(1,self.type),self.pattern_orientation,self.environment)
         elif self.pattern == "square":
-            ConwayPatterns.square(pos, self.type, self.size, self.environment)
+            Patterns.square(pos, (self.id,self.type), self.size, self.environment)
 
 
     def event(self):
@@ -288,7 +345,6 @@ class Game:
                 self.running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.paused = True
-                self.board.set_title(self.name + " Paused...")
                 self.__check_cells()
 
             elif event.type == pygame.KEYDOWN:
@@ -330,6 +386,12 @@ class Game:
                     self.type = 3
                 elif event.key == pygame.K_4:
                     self.type = 4
+                elif event.key == pygame.K_c:
+                    self.id = 1
+                elif event.key == pygame.K_w:
+                    self.id = 2
+                elif event.key == pygame.K_a:
+                    self.id = 3
                 elif event.key == pygame.K_g:
                     self.pattern = "glider"
                 elif event.key == pygame.K_l:
@@ -341,10 +403,64 @@ class Game:
                     self.pattern_position = 1
                     self.type = 1
                     self.size = 2
+                    self.id = 1
 
 
 
 
 
+class Patterns:
 
+    @staticmethod
+    def glider(position,type,orientation,environment):
+
+        l = []
+        x0,y0 = position
+        if orientation == 1:
+            l = [(x0,y0), (x0, y0 + 2),(x0 + 1, y0 + 1), (x0 + 2, y0 + 1), (x0 + 1, y0 + 2)]
+        elif orientation == 2:
+            l = [(x0, y0),(x0, y0 + 2),(x0 - 1, y0 + 1), (x0 - 2, y0 + 1),  (x0 - 1, y0 + 2)]
+        elif orientation == 3:
+            l = [(x0, y0), (x0, y0 - 2), (x0 + 1, y0 - 1), (x0 + 2, y0 - 1), (x0 + 1, y0 - 2)]
+        elif orientation == 4:
+            l = [(x0, y0), (x0, y0 - 2), (x0 - 1, y0 - 1), (x0 - 2, y0 - 1), (x0 - 1, y0 - 2)]
+
+        for position in l:
+            environment.add_cell(position,type)
+
+    @staticmethod
+    def lwss(position,type,orientation,environment):
+
+        l = []
+        x0,y0 = position
+        if orientation == 1:
+            l = [(x0,y0 + 1), (x0 + 1, y0 + 2),(x0 + 1, y0 + 1), (x0 + 1, y0), (x0 + 2, y0), (x0 + 3, y0 + 1), (x0 + 4, y0 + 1)
+                , (x0 + 2, y0 + 2), (x0 + 3, y0 + 2), (x0 + 4, y0 + 2), (x0 + 3, y0 + 3), (x0 + 2, y0 + 3)]
+        elif orientation == 2:
+            l = [(x0,y0 + 1), (x0 + 1, y0 + 2),(x0 + 1, y0 + 1), (x0 + 1, y0), (x0 + 2, y0), (x0 + 3, y0 + 1), (x0 + 4, y0 + 1)
+                , (x0 + 2, y0 + 2), (x0 + 3, y0 + 2), (x0 + 4, y0 + 2), (x0 + 3, y0 + 3), (x0 + 2, y0 + 3)]
+        elif orientation == 3:
+            l = [(x0,y0 + 1), (x0 + 1, y0 + 2),(x0 + 1, y0 + 1), (x0 + 1, y0), (x0 + 2, y0), (x0 + 3, y0 + 1), (x0 + 4, y0 + 1)
+                , (x0 + 2, y0 + 2), (x0 + 3, y0 + 2), (x0 + 4, y0 + 2), (x0 + 3, y0 + 3), (x0 + 2, y0 + 3)]
+        elif orientation == 4:
+            l = [(x0,y0 + 1), (x0 + 1, y0 + 2),(x0 + 1, y0 + 1), (x0 + 1, y0), (x0 + 2, y0), (x0 + 3, y0 + 1), (x0 + 4, y0 + 1)
+                , (x0 + 2, y0 + 2), (x0 + 3, y0 + 2), (x0 + 4, y0 + 2), (x0 + 3, y0 + 3), (x0 + 2, y0 + 3)]
+
+        for position in l:
+            environment.add_cell(position,type)
+
+
+    @staticmethod
+    def square(position,type,size,environment):
+        for x in range(position[0] - size / 2, position[0] + size / 2):
+            for y in range(position[1] - size / 2, position[1] + size / 2):
+                environment.add_cell((x,y),type)
+
+
+
+def fill_environment(environment):
+
+    for x in range(20,100):
+        for y in range(10,81):
+            environment.add_cell((x, y),1)
 

@@ -17,7 +17,7 @@ if __name__ == "__main__":
     #  for y in range(3):
      #    env.add_cell((x,y),1)
 
-   gof.Patterns.glider((3,3),1,1,env)
+   gof.ConwayPatterns.glider((3, 3), 1, 1, env)
 
    board.update_screen(env.cells_map)
    env.check()

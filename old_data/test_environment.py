@@ -9,9 +9,9 @@ if __name__ == "__main__":
 
     env = gof.Environment((800,600))
 
-    gof.Patterns.glider((10,10),1,1,env)
+    gof.ConwayPatterns.glider((10, 10), 1, 1, env)
 
-    gof.Patterns.glider((30, 30), 2,1, env)
+    gof.ConwayPatterns.glider((30, 30), 2, 1, env)
 
     print "cells:",
     env.show_live_cells_location()
